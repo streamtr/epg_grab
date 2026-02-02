@@ -693,7 +693,7 @@ void readZapInfo() {
 			*chansep='\0';
 			chanid=atoi(id);
 			printf("<channel id=\"%s\">\n",get_channelident(chanid));
-			printf("\t<display-name>%s</display-name>\n",xmlify(buf));
+			printf("\t<display-name lang=\"tr\">%s</display-name>\n",xmlify(buf));
 			printf("</channel>\n");
 		}
 	}
