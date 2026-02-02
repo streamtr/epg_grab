@@ -264,6 +264,16 @@ char *xmlify(unsigned char* s) {
 	return xml;
 }
 
+void format_xmltv_time(char *buf, size_t size, time_t t)
+{
+	struct tm tm_time;
+	char base[32];
+
+	gmtime_r(&t, &tm_time);
+	strftime(base, sizeof(base), "%Y%m%d%H%M%S", &tm_time);
+	snprintf(buf, size, "%s +0000", base);
+}
+
 void parseEventDescription(char *evtdesc) 
 {
    int evtlen,dsclen;
@@ -535,10 +545,10 @@ void parseeit(char *eitbuf, int len)
 		programme_count++;
 
 		printf("<programme channel=\"%s\" ",get_channelident(HILO(e->service_id)));
-		strftime(date_strbuf, sizeof(date_strbuf), "start=\"%Y%m%d%H%M%S\"", localtime(&start_time) );  
-		printf("%s ",date_strbuf);
-		strftime(date_strbuf, sizeof(date_strbuf), "stop=\"%Y%m%d%H%M%S\"", localtime(&stop_time));  
-		printf("%s>\n ",date_strbuf);
+		format_xmltv_time(date_strbuf, sizeof(date_strbuf), start_time);
+		printf("start=\"%s\" ", date_strbuf);
+		format_xmltv_time(date_strbuf, sizeof(date_strbuf), stop_time);
+		printf("stop=\"%s\">\n ", date_strbuf);
 		
 		//printf("\t<EventID>%i</EventID>\n",HILO(evt->event_id));
 		//printf("\t<RunningStatus>%i</RunningStatus>\n",evt->running_status); 
