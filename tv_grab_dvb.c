@@ -74,6 +74,8 @@ bool ignore_updates = true;
 bool use_chanidents = false;
 bool silent = false;
 
+static char xmltv_tz[6] = "+0000";
+
 typedef struct chninfo 
 {
 	struct chninfo *next;
@@ -262,6 +264,28 @@ char *xmlify(unsigned char* s) {
 	}
 	*r='\0';
 	return xml;
+}
+
+void init_xmltv_timezone(void)
+{
+	time_t now;
+	struct tm tm_time;
+
+	time(&now);
+	localtime_r(&now, &tm_time);
+	strftime(xmltv_tz, sizeof(xmltv_tz), "%z", &tm_time);
+	if (xmltv_tz[0] == '\0')
+		snprintf(xmltv_tz, sizeof(xmltv_tz), "+0000");
+}
+
+void format_xmltv_time(char *buf, size_t size, time_t t)
+{
+	struct tm tm_time;
+	char base[32];
+
+	localtime_r(&t, &tm_time);
+	strftime(base, sizeof(base), "%Y%m%d%H%M%S", &tm_time);
+	snprintf(buf, size, "%s %s", base, xmltv_tz);
 }
 
 void parseEventDescription(char *evtdesc) 
@@ -535,10 +559,10 @@ void parseeit(char *eitbuf, int len)
 		programme_count++;
 
 		printf("<programme channel=\"%s\" ",get_channelident(HILO(e->service_id)));
-		strftime(date_strbuf, sizeof(date_strbuf), "start=\"%Y%m%d%H%M%S\"", localtime(&start_time) );  
-		printf("%s ",date_strbuf);
-		strftime(date_strbuf, sizeof(date_strbuf), "stop=\"%Y%m%d%H%M%S\"", localtime(&stop_time));  
-		printf("%s>\n ",date_strbuf);
+		format_xmltv_time(date_strbuf, sizeof(date_strbuf), start_time);
+		printf("start=\"%s\" ", date_strbuf);
+		format_xmltv_time(date_strbuf, sizeof(date_strbuf), stop_time);
+		printf("stop=\"%s\">\n ", date_strbuf);
 		
 		//printf("\t<EventID>%i</EventID>\n",HILO(evt->event_id));
 		//printf("\t<RunningStatus>%i</RunningStatus>\n",evt->running_status); 
@@ -669,7 +693,7 @@ void readZapInfo() {
 			*chansep='\0';
 			chanid=atoi(id);
 			printf("<channel id=\"%s\">\n",get_channelident(chanid));
-			printf("\t<display-name>%s</display-name>\n",xmlify(buf));
+			printf("\t<display-name lang=\"tr\">%s</display-name>\n",xmlify(buf));
 			printf("</channel>\n");
 		}
 	}
@@ -687,9 +711,10 @@ int main(int argc, char **argv)
  */
 	do_options(argc, argv);
 	fprintf(stderr,"\n");
-               printf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+	               printf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
 	printf("<!DOCTYPE tv SYSTEM \"xmltv.dtd\">\n");
 	printf("<tv generator-info-name=\"dvb-epg-gen\">\n");
+	init_xmltv_timezone();
 	readZapInfo();
 	signal(SIGALRM,finish_up);
 	alarm(timeout);
